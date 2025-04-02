@@ -60,7 +60,7 @@ setup.protoc:
 		else echo "Unsupported architecture: $$ARCH"; exit 1; fi; \
 		PROTOC_ZIP=protoc-$(PROTOC_VERSION)-$$OS-$$ARCH.zip; \
 		curl -Lo /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$$PROTOC_ZIP; \
-		unzip -o /tmp/protoc.zip bin/protoc -d ./$(PROTOC_BIN_DIR); \
+		unzip -o /tmp/protoc.zip bin/protoc -d ./; \
 		rm -f /tmp/protoc.zip; \
 		echo "protoc installed in $(PROTOC_BIN_DIR)"; \
 		echo "You may want to add this to your PATH:"; \

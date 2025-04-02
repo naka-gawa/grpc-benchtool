@@ -2,87 +2,73 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 
-	"github.com/naka-gawa/grpc-benchtool/internal/interceptor"
+	"github.com/naka-gawa/grpc-benchtool/internal/metrics/datadog"
 	"github.com/naka-gawa/grpc-benchtool/internal/server"
-	pb "github.com/naka-gawa/grpc-benchtool/proto/grpcbench"
 )
 
 var port int
 
 func newServerCmd() *cobra.Command {
-	var (
-		host     string
-		port     int
-		timeout  time.Duration
-		serverID string
-	)
+	var cfg server.Config
+
 	cmd := &cobra.Command{
 		Use:   "server",
 		Short: "Start gRPC benchmarking server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			addr := net.JoinHostPort(host, fmt.Sprintf("%d", port))
-			lis, err := net.Listen("tcp", addr)
-			if err != nil {
-				slog.Error("failed to listen", slog.Any("error", err))
-				return err
+			var metricsClient *datadog.DatadogClient
+			if cfg.DatadogCustomMetric {
+				var err error
+				metricsClient, err = datadog.NewDatadogClient()
+				if err != nil {
+					slog.Warn("failed to initialize Datadog client", slog.Any("error", err))
+				}
 			}
 
-			s, err := initializeServer(serverID)
+			strategy := &server.DefaultStrategy{
+				ServerID:      cfg.ServerID,
+				MetricsClient: metricsClient,
+			}
+
+			handler := server.NewBenchHandler(strategy)
+
+			s, err := server.New(cfg, handler)
 			if err != nil {
 				slog.Error("failed to initialize server", slog.Any("error", err))
 				return err
 			}
 
-			stopCh, ctx, cancel := handleSignals(timeout)
+			stopCh, ctx, cancel := handleSignals(cfg.Timeout)
 			defer cancel()
 
-			go startServer(s, lis, addr)
+			go func() {
+				if err := s.Start(ctx); err != nil {
+					slog.Error("server failed", slog.Any("error", err))
+				}
+			}()
 
 			<-stopCh
-			shutdownServer(s, addr)
+			s.Shutdown(ctx)
 
 			<-ctx.Done()
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&host, "host", "0.0.0.0", "Host to bind the gRPC server")
-	cmd.Flags().IntVar(&port, "port", 50051, "Port to listen on")
-	cmd.Flags().DurationVar(&timeout, "timeout", 10*time.Second, "Shutdown timeout duration")
-	cmd.Flags().StringVar(&serverID, "server-id", "grpc-benchtool-server", "Optional server ID")
+	cmd.Flags().StringVar(&cfg.Host, "host", "0.0.0.0", "Host to bind the gRPC server")
+	cmd.Flags().IntVar(&cfg.Port, "port", 50051, "Port to listen on")
+	cmd.Flags().DurationVar(&cfg.Timeout, "timeout", 10*time.Second, "Shutdown timeout duration")
+	cmd.Flags().StringVar(&cfg.ServerID, "server-id", "grpc-benchtool-server", "Optional server ID")
+	cmd.Flags().BoolVar(&cfg.DatadogCustomMetric, "datadog-custom-metric", false, "Enable Datadog custom metric")
 
 	return cmd
-}
-
-func initializeServer(serverID string) (*grpc.Server, error) {
-	s := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			interceptor.UnaryRequestIDInterceptor(),
-			interceptor.UnaryLoggingInterceptor(),
-		),
-		grpc.ChainStreamInterceptor(
-			interceptor.StreamRequestIDInterceptor(),
-			interceptor.StreamLoggingInterceptor(),
-		),
-	)
-
-	reflection.Register(s)
-	h := server.NewBenchHandler(serverID)
-	pb.RegisterBenchServiceServer(s, h)
-
-	return s, nil
 }
 
 func handleSignals(timeout time.Duration) (chan os.Signal, context.Context, context.CancelFunc) {
@@ -91,16 +77,4 @@ func handleSignals(timeout time.Duration) (chan os.Signal, context.Context, cont
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	return stopCh, ctx, cancel
-}
-
-func startServer(s *grpc.Server, lis net.Listener, addr string) {
-	slog.Info("server listening", slog.String("address", addr))
-	if err := s.Serve(lis); err != nil {
-		slog.Error("failed to serve", slog.Any("error", err))
-	}
-}
-
-func shutdownServer(s *grpc.Server, addr string) {
-	slog.Info("shutting down gracefully...", slog.String("address", addr))
-	s.GracefulStop()
 }
