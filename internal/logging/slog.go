@@ -29,8 +29,12 @@ func (l *slogLogger) With(args ...any) Logger {
 }
 
 func Init() Logger {
+	level := slog.LevelInfo
+	if os.Getenv("DEBUG") == "true" {
+		level = slog.LevelDebug
+	}
 	l := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: level,
 	}))
 	slog.SetDefault(l)
 	return &slogLogger{logger: l}
