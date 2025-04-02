@@ -16,6 +16,10 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+bin/protoc
+bin/protoc-gen-go
+bin/protoc-gen-go-grpc
+bin/cobra-cli
 
 # Go workspace file
 go.work

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package grpcbench;
+
+option go_package = "github.com/naka-gawa/grpc-benchtool/proto/grpcbench;grpcbench";
+
+message TestRequest {
+  string client_id = 1;
+  int64 sent_unix_nano = 2;
+  int32 payload_bytes = 3;
+  bytes payload = 4;
+}
+
+message TestResponse {
+  string server_id = 1;
+  int64 received_unix_nano = 2;
+  int64 latency_nano = 3;
+}
+
+message StreamSummary {
+  string server_id = 1;
+  int64 received_count = 2;
+  int64 total_bytes = 3;
+  double average_latency_ms = 4;
+}
+
+service BenchService {
+  rpc UnaryTest(TestRequest) returns (TestResponse);
+  rpc StreamTest(stream TestRequest) returns (StreamSummary);
+}
