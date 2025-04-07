@@ -18,6 +18,7 @@ var port int
 
 func newServerCmd() *cobra.Command {
 	var cfg server.Config
+	var extraTags []string
 
 	cmd := &cobra.Command{
 		Use:   "server",
@@ -35,6 +36,8 @@ func newServerCmd() *cobra.Command {
 			strategy := &server.DefaultStrategy{
 				ServerID:      cfg.ServerID,
 				MetricsClient: metricsClient,
+				Role:          "server",
+				ExtraTags:     extraTags,
 			}
 
 			handler := server.NewBenchHandler(strategy)
@@ -67,6 +70,7 @@ func newServerCmd() *cobra.Command {
 	cmd.Flags().DurationVar(&cfg.Timeout, "timeout", 10*time.Second, "Shutdown timeout duration")
 	cmd.Flags().StringVar(&cfg.ServerID, "server-id", "grpc-benchtool-server", "Optional server ID")
 	cmd.Flags().BoolVar(&cfg.DatadogCustomMetric, "datadog-custom-metric", false, "Enable Datadog custom metric")
+	cmd.Flags().StringSliceVar(&extraTags, "tag", nil, "Extra tags for Datadog metrics. e.g. 'env:sandbox'")
 
 	return cmd
 }

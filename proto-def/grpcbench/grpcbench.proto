@@ -21,7 +21,7 @@ message StreamSummary {
   string server_id = 1;
   int64 received_count = 2;
   int64 total_bytes = 3;
-  double average_latency_ms = 4;
+  double latency_ms = 4;
 }
 
 service BenchService {
