@@ -119,7 +119,7 @@ func TestBenchHandler_StreamTest(t *testing.T) {
 		expectError  bool
 		expectCount  int64
 		expectBytes  int64
-		expectAvgMin float64 // ms 最小値だけチェック（最大や近似は誤差で unstable になる）
+		expectAvgMin float64
 	}{
 		{
 			name: "3 messages with 10 bytes each",
@@ -175,7 +175,7 @@ func TestBenchHandler_StreamTest(t *testing.T) {
 				assert.Equal(t, tt.expectCount, stream.sentSummary.ReceivedCount)
 				assert.Equal(t, tt.expectBytes, stream.sentSummary.TotalBytes)
 				if tt.expectCount > 0 {
-					assert.GreaterOrEqual(t, stream.sentSummary.AverageLatencyMs, tt.expectAvgMin)
+					assert.GreaterOrEqual(t, stream.sentSummary.LatencyMs, tt.expectAvgMin)
 				}
 			}
 
@@ -184,7 +184,7 @@ func TestBenchHandler_StreamTest(t *testing.T) {
 			assert.Equal(t, tt.expectBytes, stream.sentSummary.TotalBytes)
 
 			if tt.expectCount > 0 {
-				assert.GreaterOrEqual(t, stream.sentSummary.AverageLatencyMs, tt.expectAvgMin)
+				assert.GreaterOrEqual(t, stream.sentSummary.LatencyMs, tt.expectAvgMin)
 			}
 		})
 	}
