@@ -21,6 +21,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(newServerCmd())
+	rootCmd.AddCommand(newClientCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		slog.Error("command execution failed", slog.Any("error", err))

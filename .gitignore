@@ -21,6 +21,9 @@ bin/protoc-gen-go
 bin/protoc-gen-go-grpc
 bin/cobra-cli
 
+# benchmarks
+bench/*.pprof
+
 # Go workspace file
 go.work
 go.work.sum
