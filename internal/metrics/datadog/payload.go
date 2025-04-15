@@ -24,7 +24,7 @@ func buildGaugePayload(metric string, value float64, tags []string) ([]byte, err
 		Series: []metricSeries{{
 			Metric: metric,
 			Points: [][2]float64{{now, value}},
-			Type:   "gauge",
+			Type:   "count",
 			Tags:   tags,
 		}},
 	}

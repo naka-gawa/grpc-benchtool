@@ -16,4 +16,5 @@ func ClientFlags(cmd *cobra.Command, cfg *Config) {
 	cmd.Flags().StringVar(&cfg.ClientID, "clientid", "client", "Client ID for the test")
 	cmd.Flags().BoolVar(&cfg.EnableCPUProfile, "enablecpuprofile", false, "Enable CPU profiling")
 	cmd.Flags().StringVar(&cfg.CpuProfilePath, "cpuprofpath", "./bench/cpu.pprof", "Path to save CPU profile file")
+	cmd.Flags().BoolVar(&cfg.EnableMetrics, "enablemetrics", false, "Enable metrics collection")
 }
